@@ -11,10 +11,10 @@ Kotlin/Spring 기반 백엔드 성능 문제를 직접 재현하고 디버깅하
 
 | 순서 | Lab | 핵심 주제 | PRD |
 |------|-----|----------|-----|
-| 1순위 | SQL Execution Plan Lab | 실행계획 분석, 인덱스 최적화, N+1 해결 | [SQL Lab PRD](../docs/prd/sql-lab-prd.md) |
-| 2순위 | Thread Pool Lab | Thread/Connection Pool 고갈, Actuator 모니터링 | [Thread Lab PRD](../docs/prd/thread-lab-prd.md) |
-| 3순위 | Redis Cache Miss Lab | Cache Miss 원인 분석, Stampede 패턴 해결 | [Cache Lab PRD](../docs/prd/cache-lab-prd.md) |
-| 4순위 | GC Lab | GC 로그 분석, 메모리 누수 재현 | [GC Lab PRD](../docs/prd/gc-lab-prd.md) |
+| 1순위 | SQL Execution Plan Lab | 실행계획 분석, 인덱스 최적화, N+1 해결 | [SQL Lab PRD](./sql-lab/PRD.md) |
+| 2순위 | Thread Pool Lab | Thread/Connection Pool 고갈, Actuator 모니터링 | [Thread Lab PRD](./thread-lab/PRD.md) |
+| 3순위 | Redis Cache Miss Lab | Cache Miss 원인 분석, Stampede 패턴 해결 | [Cache Lab PRD](./cache-lab/PRD.md) |
+| 4순위 | GC Lab | GC 로그 분석, 메모리 누수 재현 | [GC Lab PRD](./gc-lab/PRD.md) |
 
 ---
 

@@ -3,6 +3,7 @@ package com.perflab.sqllab.application.scenario.fulltablescan
 import com.perflab.sqllab.application.dto.DiagnosisResponse
 import com.perflab.sqllab.application.dto.QueryResultResponse
 import com.perflab.sqllab.application.dto.UserSearchResponse
+import com.perflab.sqllab.domain.model.User
 import com.perflab.sqllab.domain.repository.UserRepository
 import com.perflab.sqllab.domain.service.ExplainAnalyzeService
 import org.springframework.stereotype.Service
@@ -18,7 +19,7 @@ class FullTableScanService(
         val sql = "SELECT * FROM users WHERE name LIKE CONCAT('%', ?, '%')"
         val diagnosis = explainAnalyzeService.analyze(sql, "%$name%")
         val users = userRepository.findByNameContaining(name)
-            .map { UserSearchResponse(it.id, it.name, it.email) }
+            .map { it.toResponse() }
 
         return QueryResultResponse(
             scenario = "Full Table Scan",
@@ -33,7 +34,7 @@ class FullTableScanService(
         val sql = "SELECT * FROM users WHERE name = ?"
         val diagnosis = explainAnalyzeService.analyze(sql, name)
         val users = userRepository.findByName(name)
-            .map { UserSearchResponse(it.id, it.name, it.email) }
+            .map { it.toResponse() }
 
         return QueryResultResponse(
             scenario = "Full Table Scan",
@@ -43,4 +44,10 @@ class FullTableScanService(
             dataCount = users.size
         )
     }
+
+    private fun User.toResponse() = UserSearchResponse(
+        id = id,
+        name = name,
+        email = email
+    )
 }

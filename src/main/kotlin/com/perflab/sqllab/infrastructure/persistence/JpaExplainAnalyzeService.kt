@@ -12,24 +12,19 @@ class JpaExplainAnalyzeService(
 ) : ExplainAnalyzeService {
 
     override fun analyze(sql: String, vararg params: Any?): QueryDiagnosis {
-        // EXPLAIN ANALYZE 실행
-        val explainSql = "EXPLAIN ANALYZE $sql"
-        val query = entityManager.createNativeQuery(explainSql)
+        val explainAnalyzeQuery = entityManager.createNativeQuery("EXPLAIN ANALYZE $sql")
+        val explainQuery = entityManager.createNativeQuery("EXPLAIN $sql")
+
         params.forEachIndexed { index, param ->
-            query.setParameter(index + 1, param)
+            explainAnalyzeQuery.setParameter(index + 1, param)
+            explainQuery.setParameter(index + 1, param)
         }
 
         val startTime = System.nanoTime()
-        val results = query.resultList
+        val analyzeResults = explainAnalyzeQuery.resultList
         val executionTimeMs = (System.nanoTime() - startTime) / 1_000_000.0
+        val explainOutput = analyzeResults.joinToString("\n") { it.toString() }
 
-        val explainOutput = results.joinToString("\n") { it.toString() }
-
-        // EXPLAIN (non-ANALYZE) 실행하여 access type 추출
-        val explainQuery = entityManager.createNativeQuery("EXPLAIN $sql")
-        params.forEachIndexed { index, param ->
-            explainQuery.setParameter(index + 1, param)
-        }
         val explainResult = explainQuery.resultList
 
         var accessType = AccessType.ALL
@@ -37,7 +32,6 @@ class JpaExplainAnalyzeService(
 
         if (explainResult.isNotEmpty()) {
             val row = explainResult[0] as Array<*>
-            // EXPLAIN 결과: id, select_type, table, partitions, type, possible_keys, key, key_len, ref, rows, filtered, Extra
             if (row.size > 4) {
                 accessType = AccessType.from(row[4]?.toString() ?: "ALL")
             }

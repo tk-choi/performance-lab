@@ -51,114 +51,61 @@ class DataSeeder(
         log.info("데이터 시딩 완료! 총 소요 시간: {}초", elapsed)
     }
 
-    private fun seedUsers() {
-        log.info("users 시딩 시작: {}건", USER_COUNT)
-        val sql = "INSERT INTO users (name, email, created_at) VALUES (?, ?, ?)"
+    private fun seedUsers() = batchSeed("users",
+        "INSERT INTO users (name, email, created_at) VALUES (?, ?, ?)", USER_COUNT
+    ) { i -> arrayOf("user_$i", "user_$i@test.com", randomDateTime(2019, 2024)) }
 
-        var inserted = 0
-        while (inserted < USER_COUNT) {
-            val batchEnd = minOf(inserted + BATCH_SIZE, USER_COUNT)
-            val batchArgs = (inserted + 1..batchEnd).map { i ->
-                arrayOf<Any?>(
-                    "user_$i",
-                    "user_$i@test.com",
-                    randomDateTime(2019, 2024)
-                )
-            }
-            jdbcTemplate.batchUpdate(sql, batchArgs)
-            inserted = batchEnd
-            logProgress("users", inserted, USER_COUNT)
-        }
-        log.info("users 시딩 완료: {}건", inserted)
+    private fun seedOrders() = batchSeed("orders",
+        "INSERT INTO orders (user_id, product_name, amount, created_at) VALUES (?, ?, ?, ?)", ORDER_COUNT
+    ) { _ ->
+        arrayOf(
+            Random.nextLong(1, USER_COUNT + 1L),
+            PRODUCTS[Random.nextInt(PRODUCTS.size)],
+            Random.nextInt(1_000, 500_001),
+            randomDateTime(2019, 2024)
+        )
     }
 
-    private fun seedOrders() {
-        log.info("orders 시딩 시작: {}건", ORDER_COUNT)
-        val sql = "INSERT INTO orders (user_id, product_name, amount, created_at) VALUES (?, ?, ?, ?)"
-
-        var inserted = 0
-        while (inserted < ORDER_COUNT) {
-            val batchEnd = minOf(inserted + BATCH_SIZE, ORDER_COUNT)
-            val batchArgs = (inserted + 1..batchEnd).map {
-                arrayOf<Any?>(
-                    Random.nextLong(1, USER_COUNT + 1L),
-                    PRODUCTS[Random.nextInt(PRODUCTS.size)],
-                    Random.nextInt(1_000, 500_001),
-                    randomDateTime(2019, 2024)
-                )
-            }
-            jdbcTemplate.batchUpdate(sql, batchArgs)
-            inserted = batchEnd
-            logProgress("orders", inserted, ORDER_COUNT)
-        }
-        log.info("orders 시딩 완료: {}건", inserted)
+    private fun seedPosts() = batchSeed("posts",
+        "INSERT INTO posts (user_id, title, content, created_at) VALUES (?, ?, ?, ?)", POST_COUNT
+    ) { i ->
+        val userId = Random.nextLong(1, USER_COUNT + 1L)
+        arrayOf(userId, "포스트 제목 $i", "포스트 내용입니다. user_$userId 가 작성한 게시글 $i 입니다.", randomDateTime(2019, 2024))
     }
 
-    private fun seedPosts() {
-        log.info("posts 시딩 시작: {}건", POST_COUNT)
-        val sql = "INSERT INTO posts (user_id, title, content, created_at) VALUES (?, ?, ?, ?)"
-
-        var inserted = 0
-        while (inserted < POST_COUNT) {
-            val batchEnd = minOf(inserted + BATCH_SIZE, POST_COUNT)
-            val batchArgs = (inserted + 1..batchEnd).map { i ->
-                val userId = Random.nextLong(1, USER_COUNT + 1L)
-                arrayOf<Any?>(
-                    userId,
-                    "포스트 제목 $i",
-                    "포스트 내용입니다. user_$userId 가 작성한 게시글 $i 입니다.",
-                    randomDateTime(2019, 2024)
-                )
-            }
-            jdbcTemplate.batchUpdate(sql, batchArgs)
-            inserted = batchEnd
-            logProgress("posts", inserted, POST_COUNT)
-        }
-        log.info("posts 시딩 완료: {}건", inserted)
+    private fun seedComments() = batchSeed("comments",
+        "INSERT INTO comments (post_id, user_id, content, created_at) VALUES (?, ?, ?, ?)", COMMENT_COUNT
+    ) { i ->
+        arrayOf(
+            Random.nextLong(1, POST_COUNT + 1L),
+            Random.nextLong(1, USER_COUNT + 1L),
+            "댓글 내용 $i 입니다.",
+            randomDateTime(2019, 2024)
+        )
     }
 
-    private fun seedComments() {
-        log.info("comments 시딩 시작: {}건", COMMENT_COUNT)
-        val sql = "INSERT INTO comments (post_id, user_id, content, created_at) VALUES (?, ?, ?, ?)"
-
-        var inserted = 0
-        while (inserted < COMMENT_COUNT) {
-            val batchEnd = minOf(inserted + BATCH_SIZE, COMMENT_COUNT)
-            val batchArgs = (inserted + 1..batchEnd).map { i ->
-                arrayOf<Any?>(
-                    Random.nextLong(1, POST_COUNT + 1L),
-                    Random.nextLong(1, USER_COUNT + 1L),
-                    "댓글 내용 $i 입니다.",
-                    randomDateTime(2019, 2024)
-                )
-            }
-            jdbcTemplate.batchUpdate(sql, batchArgs)
-            inserted = batchEnd
-            logProgress("comments", inserted, COMMENT_COUNT)
-        }
-        log.info("comments 시딩 완료: {}건", inserted)
+    private fun seedLogs() = batchSeed("logs",
+        "INSERT INTO logs (user_id, action, status, created_at) VALUES (?, ?, ?, ?)", LOG_COUNT
+    ) { _ ->
+        arrayOf(
+            Random.nextLong(1, USER_COUNT + 1L),
+            ACTIONS[Random.nextInt(ACTIONS.size)],
+            STATUSES[Random.nextInt(STATUSES.size)],
+            randomDateTime(2019, 2024)
+        )
     }
 
-    private fun seedLogs() {
-        log.info("logs 시딩 시작: {}건", LOG_COUNT)
-        val sql = "INSERT INTO logs (user_id, action, status, created_at) VALUES (?, ?, ?, ?)"
-
+    private fun batchSeed(table: String, sql: String, totalCount: Int, rowGenerator: (Int) -> Array<Any?>) {
+        log.info("{} 시딩 시작: {}건", table, totalCount)
         var inserted = 0
-        while (inserted < LOG_COUNT) {
-            val batchEnd = minOf(inserted + BATCH_SIZE, LOG_COUNT)
-            val batchArgs = (inserted + 1..batchEnd).map {
-                arrayOf<Any?>(
-                    Random.nextLong(1, USER_COUNT + 1L),
-                    ACTIONS[Random.nextInt(ACTIONS.size)],
-                    STATUSES[Random.nextInt(STATUSES.size)],
-                    randomDateTime(2019, 2024)
-                )
-            }
+        while (inserted < totalCount) {
+            val batchEnd = minOf(inserted + BATCH_SIZE, totalCount)
+            val batchArgs = (inserted + 1..batchEnd).map { i -> rowGenerator(i) }
             jdbcTemplate.batchUpdate(sql, batchArgs)
             inserted = batchEnd
-            logProgress("logs", inserted, LOG_COUNT)
+            logProgress(table, inserted, totalCount)
         }
-        log.info("logs 시딩 완료: {}건", inserted)
+        log.info("{} 시딩 완료: {}건", table, inserted)
     }
 
     private fun randomDateTime(fromYear: Int, toYear: Int): LocalDateTime {
